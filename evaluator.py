@@ -67,13 +67,14 @@ class Evaluator:
             STRICTLY REPLY IN THE FOLLOWING FORMAT:
             <Your Response>
             @@@@
-            correct|incorrect|partially
+            correct|incorrect
 
-            NOTE: Ask a follow-up to correct me if I am incorrect. If correct, explain the concept a bit more.
-            NOTE: If I am partially, explain the missing part but return the "correct" flag so that I am not stuck on one thing.
-            NOTE: Only ask a follow-up if I am incorrect.
-            NOTE: DO NOT ask a follow-up if I am correct. Only an explanation is to be provided.
-            NOTE: Provide feedback on my answer and tell in one word if it is correct, incorrect, or partially, separated by the delimiter @@@@
+            PLEASE FOLLOW THE FOLLOWING INSTRUCTIONS PROPERLY WITHOUT FAIL.
+            NOTE: If I am correct return the correct flag
+            NOTE: Return correct flag even if I am partially correct, but explain the missing points in your feedback
+            NOTE: Ask a followup question to send me to the right direction if I am incorrect
+            NOTE: Do not ask follow up for correct and partially correct answers
+            NOTE: Provide feedback on my answer and tell in one word if it is correct or incorrect, separated by the delimiter @@@@
         """
 
         response = self.model.generate_content(prompt)
@@ -85,8 +86,9 @@ class Evaluator:
             pass
 
         # Ensure flag is valid
-        if flag not in ['correct', 'incorrect', 'partially']:
-            feedback = "There was an issue processing your answer. Please try again."
+        if flag.strip() not in ['correct', 'incorrect', 'partially correct']:
+            print(flag)
+            feedback = "Theer was an issue processing your answer. Please try again."
             flag = "incorrect"
 
         return feedback.strip(), flag.strip()
