@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocraticAI - Chat Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>SocraticAI</h1>
+            <p class="tagline">Empowering Learning Through Thoughtful Questioning</p>
+        </div>
+        
+
+        <!-- Topic Selection -->
+        <div class="topic-selection">
+            <form id="start-study-form">
+                <label for="topic">Choose a study topic:</label>
+                <input type="text" id="topic" name="topic" placeholder="Ex - Sorting Algorithms" autocomplete="off">
+                <button type="submit">Start Study</button>
+            </form>
+        </div>
+
+        <!-- Chatbox: Q&A interaction section -->
+        <div id="chatbox" class="chatbox"></div>
+
+        <!-- Answer input form -->
+        <form id="answer-form" style="display:none;">
+            <input type="text" id="answer" name="answer" placeholder="Type your answer here..." autocomplete="off">
+            <button type="submit">Send</button>
+        </form>
+
+        <!-- End Session Button -->
+        <button id="end-session-btn">End Session</button>
+    </div>
+
+    <script>
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let conversation = "";
+
+        // Start study session
+        const startForm = document.getElementById('start-study-form');
+        const endSessionBtn = document.getElementById('end-session-btn');
+        const chatbox = document.getElementById('chatbox');
+        const answerForm = document.getElementById('answer-form');
+
+        startForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const topic = document.getElementById('topic').value;
+            fetch('http://127.0.0.1:5000/start_study', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `topic=${encodeURIComponent(topic)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                currentQuestions = data.questions;
+                document.querySelector('.topic-selection').style.display = 'none';
+                answerForm.style.display = 'flex'; // Show the answer form
+                endSessionBtn.style.display = 'block'; // Show the End Session button
+                displayQuestion(); // Start with the first question
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // Display the current question in the chatbox
+        function displayQuestion() {
+            if (currentQuestionIndex < currentQuestions.length) {
+                const question = document.createElement('div');
+                question.classList.add('chat-message', 'ai-message');
+                question.innerText = `${currentQuestions[currentQuestionIndex]}`;
+                chatbox.appendChild(question);
+                chatbox.scrollTop = chatbox.scrollHeight;
+            } else {
+                const endMessage = document.createElement('div');
+                endMessage.classList.add('chat-message', 'ai-message');
+                endMessage.innerText = "Study session completed!";
+                chatbox.appendChild(endMessage);
+                answerForm.style.display = 'none';
+                endSessionBtn.style.display = 'block'; // Show End Session button
+            }
+        }
+
+        // Submit answer and get feedback
+        answerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const answer = document.getElementById('answer').value;
+            const topic = document.getElementById('topic').value;
+            const question = currentQuestions[currentQuestionIndex];
+
+            // Display user answer in chatbox
+            const userAnswer = document.createElement('div');
+            userAnswer.classList.add('chat-message', 'user-message');
+            userAnswer.innerText = answer;
+            chatbox.appendChild(userAnswer);
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            // Fetch feedback from the backend
+            fetch('http://127.0.0.1:5000/check_answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    topic: topic,
+                    question: question,
+                    answer: answer,
+                    conversation: conversation
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Add feedback from AI
+                const feedback = document.createElement('div');
+                feedback.classList.add('chat-message', 'ai-message');
+                feedback.innerText = data.feedback;
+                chatbox.appendChild(feedback);
+
+                conversation += `AI: ${question}\nUser: ${answer}\n`;
+
+                if (data.flag === 'correct') {
+                    currentQuestionIndex++;
+                    displayQuestion();  // Show the next question
+                } else {
+                    const retryMessage = document.createElement('div');
+                    retryMessage.classList.add('chat-message', 'ai-message');
+                    retryMessage.innerText = "Incorrect. Please try again.";
+                    chatbox.appendChild(retryMessage);
+                }
+
+                chatbox.scrollTop = chatbox.scrollHeight;
+            })
+            .catch(error => console.error('Error:', error));
+
+            // Clear the answer input field
+            document.getElementById('answer').value = '';
+        });
+
+        // End session and restart
+        endSessionBtn.addEventListener('click', function() {
+            // Clear chatbox and reset session
+            chatbox.innerHTML = '';
+            currentQuestions = [];
+            currentQuestionIndex = 0;
+            conversation = '';
+
+            // Hide answer form and end session button, show topic selection form
+            answerForm.style.display = 'none';
+            endSessionBtn.style.display = 'none';
+            document.querySelector('.topic-selection').style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
