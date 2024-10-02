@@ -67,7 +67,3 @@ class Planner:
 
         return course
 
-if __name__ == '__main__':
-    pln = Planner()
-
-    pln.generate_questions("sorting algorithms")
