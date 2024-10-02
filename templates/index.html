@@ -5,27 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocraticAI - Chat Interface</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-        
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>SocraticAI</h1>
-            <p class="tagline">Empowering Learning Through Thoughtful Questioning</p>
-        </div>
-        
-
-        <!-- Topic Selection -->
-        <div class="topic-selection">
-            <form id="start-study-form">
-                <label for="topic">Choose a study topic:</label>
-                <input type="text" id="topic" name="topic" placeholder="Ex - Sorting Algorithms" autocomplete="off">
-                <button type="submit">Start Study</button>
+    <div class="container">
+        <div class="gradient-bg"></div>
+        <main>
+            <h1>Socratic AI</h1>
+            <p>Empowering Learning Through Thoughtful Questioning</p>
+            
+            <!-- Topic selection form -->
+            <form id="start-study-form" class="start-study-form">
+                <div class="input-container">
+                    <input type="text" id="topic" name="topic" class="topic-input" placeholder="Choose a study topic" autocomplete="off">
+                </div>
+                <button class="btn btn-outline btn-sm" type="submit">Start Study</button>
             </form>
-        </div>
-
+        </main>
+        
         <!-- Chatbox: Q&A interaction section -->
-        <div id="chatbox" class="chatbox"></div>
+        <div id="chatbox" class="chatbox" style="display:none;"></div> <!-- Initially hidden -->
 
         <!-- Answer input form -->
         <form id="answer-form" style="display:none;">
@@ -34,7 +32,8 @@
         </form>
 
         <!-- End Session Button -->
-        <button id="end-session-btn">End Session</button>
+        <button id="end-session-btn" style="display:none;">End Session</button>
+        
     </div>
 
     <script>
@@ -47,10 +46,18 @@
         const endSessionBtn = document.getElementById('end-session-btn');
         const chatbox = document.getElementById('chatbox');
         const answerForm = document.getElementById('answer-form');
+        const main = document.querySelector('main'); // Select the main element
 
         startForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const topic = document.getElementById('topic').value;
+            
+            // Check if topic is empty
+            if (!topic.trim()) {
+                alert('Please choose a study topic.');
+                return;
+            }
+
             fetch('http://127.0.0.1:5000/start_study', {
                 method: 'POST',
                 headers: {
@@ -61,10 +68,18 @@
             .then(response => response.json())
             .then(data => {
                 currentQuestions = data.questions;
-                document.querySelector('.topic-selection').style.display = 'none';
-                answerForm.style.display = 'flex'; // Show the answer form
-                endSessionBtn.style.display = 'block'; // Show the End Session button
-                displayQuestion(); // Start with the first question
+                document.querySelector('.start-study-form').style.display = 'none'; // Hide topic selection form
+                
+                // Show chatbox and answer form after clicking Start Study
+                chatbox.style.display = 'flex';
+                answerForm.style.display = 'flex';
+                endSessionBtn.style.display = 'block'; // Show the end session button
+                
+                // Decrease main height and increase chatbox height
+                main.style.height = '20%'; // Adjust main height
+                chatbox.style.height = '80%'; // Adjust chatbox height
+
+                displayQuestion(); // Display the first question
             })
             .catch(error => console.error('Error:', error));
         });
@@ -74,16 +89,24 @@
             if (currentQuestionIndex < currentQuestions.length) {
                 const question = document.createElement('div');
                 question.classList.add('chat-message', 'ai-message');
-                question.innerText = `${currentQuestions[currentQuestionIndex]}`;
+                question.innerText = currentQuestions[currentQuestionIndex];
                 chatbox.appendChild(question);
-                chatbox.scrollTop = chatbox.scrollHeight;
+
+                // Scroll to the latest message in chatbox and body
+                chatbox.scrollTop = chatbox.scrollHeight; 
+                window.scrollTo(0, document.body.scrollHeight); // Scroll the entire page to the bottom
             } else {
                 const endMessage = document.createElement('div');
                 endMessage.classList.add('chat-message', 'ai-message');
                 endMessage.innerText = "Study session completed!";
                 chatbox.appendChild(endMessage);
-                answerForm.style.display = 'none';
-                endSessionBtn.style.display = 'block'; // Show End Session button
+                
+                // Auto-scroll to show the last message
+                chatbox.scrollTop = chatbox.scrollHeight;
+                window.scrollTo(0, document.body.scrollHeight); // Scroll the entire page to the bottom
+
+                answerForm.style.display = 'none'; // Hide answer form
+                endSessionBtn.style.display = 'block'; // Show end session button
             }
         }
 
@@ -99,7 +122,10 @@
             userAnswer.classList.add('chat-message', 'user-message');
             userAnswer.innerText = answer;
             chatbox.appendChild(userAnswer);
+
+            // Scroll the chatbox and the whole document
             chatbox.scrollTop = chatbox.scrollHeight;
+            window.scrollTo(0, document.body.scrollHeight);
 
             // Fetch feedback from the backend
             fetch('http://127.0.0.1:5000/check_answer', {
@@ -122,11 +148,12 @@
                 feedback.innerText = data.feedback;
                 chatbox.appendChild(feedback);
 
+                // Append conversation
                 conversation += `AI: ${question}\nUser: ${answer}\n`;
 
                 if (data.flag === 'correct') {
                     currentQuestionIndex++;
-                    displayQuestion();  // Show the next question
+                    displayQuestion(); // Display the next question
                 } else {
                     const retryMessage = document.createElement('div');
                     retryMessage.classList.add('chat-message', 'ai-message');
@@ -134,7 +161,9 @@
                     chatbox.appendChild(retryMessage);
                 }
 
-                chatbox.scrollTop = chatbox.scrollHeight;
+                // Scroll chatbox to the latest message and the entire document to the bottom
+                chatbox.scrollTop = chatbox.scrollHeight; 
+                window.scrollTo(0, document.body.scrollHeight); // Scroll the entire page to the bottom
             })
             .catch(error => console.error('Error:', error));
 
@@ -144,7 +173,7 @@
 
         // End session and restart
         endSessionBtn.addEventListener('click', function() {
-            // Clear chatbox and reset session
+            // Clear chatbox and reset session data
             chatbox.innerHTML = '';
             currentQuestions = [];
             currentQuestionIndex = 0;
@@ -153,7 +182,14 @@
             // Hide answer form and end session button, show topic selection form
             answerForm.style.display = 'none';
             endSessionBtn.style.display = 'none';
-            document.querySelector('.topic-selection').style.display = 'flex';
+            document.querySelector('.start-study-form').style.display = 'flex';
+
+            // Hide chatbox again
+            chatbox.style.display = 'none';
+
+            // Reset main height and chatbox height
+            main.style.height = ''; // Reset main height
+            chatbox.style.height = ''; // Reset chatbox height
         });
     </script>
 </body>

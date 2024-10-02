@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 from evaluator import Evaluator
 from planner import Planner
 
 app = Flask(__name__)
+CORS(app)
 
 # Initialize the planner and evaluator
 planner = Planner()
