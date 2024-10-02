@@ -1,0 +1,6 @@
+Languages
+python
+
+Python Libraries
+python-dotenv
+google-generativeai
