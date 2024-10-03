@@ -10,7 +10,7 @@ SocraticAI is an innovative educational platform that leverages artificial intel
     - [Windows Installation](#Windows-Installation)
     - [macOS Installation](#macOS-Installation)
     - [Linux Installation](#Linux-Installation)
-      - [Ubuntu/Debian](#Ubuntu/Debian)
+      - [Ubuntu/Debian](#Ubuntu-or-Debian)
       - [Fedora](#Fedora)
   - [Installing Dependencies](#Installing-Dependencies)
   - [Obtain a Gemini API Key](#Obtain-a-Gemini-API-Key)
@@ -87,7 +87,7 @@ SocraticAI is an innovative educational platform that leverages artificial intel
 
 #### Linux Installation
 
-##### Ubuntu/Debian
+##### Ubuntu or Debian
 1. Update Package List
    ```bash
    sudo apt update
